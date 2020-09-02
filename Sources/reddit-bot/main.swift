@@ -3,6 +3,11 @@ import Alamofire
 
 var token = ""
 
+func refreshToken() {
+  getNewToken()
+  sleep(2) // seconds
+}
+
 func getNewToken() {
   let urlString = "https://www.reddit.com/api/v1/access_token"
 
@@ -24,19 +29,14 @@ func getNewToken() {
     }
     
     token = dict["access_token"] as! String
-    
-    getNewMeme()
   }
 }
 
-func getNewMeme(subreddit: String = "MedicalMeme") {
+var postUrl: String?
+var postID: String?
+
+func getNewPost(subreddit: String = "MedicalMeme") {
   let url = "https://oauth.reddit.com/r/\(subreddit)/hot?limit=1"
-  
-//  let params = [
-//    "grant_type": "password",
-//    "username": "\(username)",
-//    "password": "\(password)"
-//  ]
   
   let headers: HTTPHeaders = [
     "Authorization": "Bearer \(token)",
@@ -44,8 +44,11 @@ func getNewMeme(subreddit: String = "MedicalMeme") {
   
   Alamofire.request(url, headers: headers).responseJSON { response in
     guard response.result.isSuccess else {
-      print("[getNewMeme] no success")
-      exit(EXIT_SUCCESS)
+      print("[getNewPost] no success")
+      
+      // oh shit here we go again
+      refreshToken()
+      return
     }
 
     guard let dict = response.result.value as? [String: Any],
@@ -53,23 +56,44 @@ func getNewMeme(subreddit: String = "MedicalMeme") {
       let children = globData["children"] as? [[String: Any]],
       let child = children.first,
       let data = child["data"] as? [String: Any] else {
-        print("[getNewMeme] no value transform")
+        print("[getNewPost] no value transform")
         exit(EXIT_SUCCESS)
     }
 
-    let url = data["url"] as? String
-    let after = data["after"] as? String
-    let postID = data["id"] as? String
-    
-    let gag = "bebebe"
-    
-    print(url ?? gag)
-    print(after ?? gag)
-    print(postID ?? gag)
+    postUrl = data["url"] as? String
+    postID = data["id"] as? String
     
   }
 }
 
-getNewToken()
+func isImage(url: String) -> Bool {
+  let suffixes = [".png", ".jpeg", ".jpg"]
+  for suf in suffixes {
+    if url.hasSuffix(suf) {
+      return true
+    }
+  }
+  
+  return false
+}
 
-dispatchMain()
+if #available(OSX 10.12, *) {
+  Timer.scheduledTimer(withTimeInterval: 8, repeats: true) { _ in
+    getNewPost()
+    
+    if let postID = postID, let postUrl = postUrl,
+     !sentPosts.contains(postID) && isImage(url: postUrl) {
+      print(postUrl)
+      sentPosts.insert(postID)
+    } else {
+      print("🤓")
+      print(postID ?? "nil", postUrl ?? "nil")
+      print("👿")
+    }
+    
+  }
+} else {
+  print("hmmmmm..... ручка....")
+}
+
+CFRunLoopRun()
