@@ -51,20 +51,21 @@ class Reddit {
     return false
   }
   
-  func checking() {
-    if let postID = postID, let postUrl = postUrl,
-     !sentPosts.contains(postID) && isImage(url: postUrl) {
+  static func isNewPost(_ postID: String, _ postUrl: String) -> Bool {
+//    if let postID = postID, let postUrl = postUrl,
+    
+     if !sentPosts.contains(postID) && isImage(url: postUrl) {
       sentPosts.insert(postID)
       saveSentPosts()
-      print("Saved new post")
+      return true
     } else {
-      print("🤓")
-      print(postID ?? "nil", postUrl ?? "nil")
-      print("👿")
+      return false
     }
   }
   
-  static func getNewPost(subreddit: String = "MedicalMeme") {
+  typealias PostURL = String
+  
+  static func getNewPost(subreddit: String = "MedicalMeme", _ completion: @escaping (_ post: PostURL) -> ()) {
     let url = "https://oauth.reddit.com/r/\(subreddit)/hot?limit=1"
     
     let headers: HTTPHeaders = [
@@ -87,9 +88,16 @@ class Reddit {
           print("[getNewPost] no value transform")
           exit(EXIT_SUCCESS)
       }
-
-      let postUrl = data["url"] as? String
-      let postID = data["id"] as? String
+      
+//      let postUrl = data["url"] as? String
+//      let postID = data["id"] as? String
+      
+      if let postUrl = data["url"] as? PostURL,
+        let postID = data["id"] as? String,
+//        isNewPost(postID, postUrl) {
+        true {
+        completion(postUrl)
+      }
       
     }
   }
