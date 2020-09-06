@@ -89,9 +89,6 @@ class Reddit {
           exit(EXIT_SUCCESS)
       }
       
-//      let postUrl = data["url"] as? String
-//      let postID = data["id"] as? String
-      
       if let postUrl = data["url"] as? PostURL,
         let postID = data["id"] as? String,
 //        isNewPost(postID, postUrl) {
